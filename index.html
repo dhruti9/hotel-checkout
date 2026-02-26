@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CheckOut Pro – Hotel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+<style>
+:root {
+  --ink: #0F0D0A;
+  --ink2: #1C1914;
+  --ink3: #2A251E;
+  --sand: #F5EFE3;
+  --sand2: #EDE4D3;
+  --gold: #B8902A;
+  --gold2: #D4A83E;
+  --gold3: #F0C85A;
+  --cream: #FAF6EE;
+  --muted: #8A7E6A;
+  --muted2: #5C5245;
+  --green: #2E7D52;
+  --green-bg: rgba(46,125,82,0.12);
+  --red: #9B3535;
+  --red-bg: rgba(155,53,53,0.12);
+  --amber: #B85A00;
+  --amber-bg: rgba(184,90,0,0.12);
+  --blue: #2A5C8A;
+  --blue-bg: rgba(42,92,138,0.12);
+  --border: rgba(184,144,42,0.18);
+  --border2: rgba(255,255,255,0.07);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  background: var(--ink);
+  color: var(--sand);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── TOPBAR ─────────────────────────────────────── */
+.topbar {
+  background: var(--ink2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--gold2);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-dot {
+  width: 7px; height: 7px;
+  background: var(--gold3);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+.role-tabs {
+  display: flex;
+  gap: 3px;
+  background: rgba(255,255,255,0.04);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.rtab {
+  padding: 6px 20px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.rtab.active { background: var(--gold); color: var(--ink); }
+.rtab:hover:not(.active) { color: var(--sand); background: rgba(255,255,255,0.06); }
+
+.topbar-right {
+  display: flex; align-items: center; gap: 14px;
+}
+.clock {
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 5px 13px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+.deadline-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+.deadline-ok { color: var(--green); border-color: rgba(46,125,82,0.4); background: var(--green-bg); }
+.deadline-warn { color: var(--amber); border-color: rgba(184,90,0,0.4); background: var(--amber-bg); animation: flashborder 1s infinite; }
+.deadline-late { color: var(--red); border-color: rgba(155,53,53,0.4); background: var(--red-bg); }
+@keyframes flashborder { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+/* ─── MAIN ─────────────────────────────────────────── */
+.main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; animation: fadeup 0.3s ease; }
+.panel.active { display: block; }
+@keyframes fadeup { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── SECTION HEADER ──────────────────────────────── */
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.sec-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--gold2);
+  letter-spacing: 0.03em;
+}
+.sec-sub { font-size: 0.77rem; color: var(--muted); margin-top: 2px; }
+
+/* ─── CARDS ───────────────────────────────────────── */
+.card {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.card-head {
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.card-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  background: rgba(184,144,42,0.12);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.card-title { font-size: 0.9rem; font-weight: 700; color: var(--sand); letter-spacing: 0.03em; }
+.card-sub { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+.card-body { padding: 20px; }
+
+/* ─── FORM ────────────────────────────────────────── */
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 9px 13px;
+  color: var(--sand);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.87rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--gold);
+  background: rgba(184,144,42,0.06);
+}
+.field textarea { resize: vertical; min-height: 70px; }
+.field select option { background: #1C1914; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 13px; }
+
+/* ─── BUTTONS ─────────────────────────────────────── */
+.btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.btn-gold { background: var(--gold); color: var(--ink); }
+.btn-gold:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(184,144,42,0.3); }
+.btn-ghost { background: rgba(255,255,255,0.05); color: var(--sand); border: 1px solid rgba(255,255,255,0.1); }
+.btn-ghost:hover { background: rgba(255,255,255,0.09); }
+.btn-green { background: var(--green-bg); color: #5CB88A; border: 1px solid rgba(46,125,82,0.35); }
+.btn-green:hover { background: rgba(46,125,82,0.2); }
+.btn-red { background: var(--red-bg); color: #D47878; border: 1px solid rgba(155,53,53,0.35); }
+.btn-amber { background: var(--amber-bg); color: #D4900A; border: 1px solid rgba(184,90,0,0.35); }
+.btn-amber:hover { background: rgba(184,90,0,0.2); }
+.btn-sm { padding: 6px 13px; font-size: 0.75rem; }
+.btn-full { width: 100%; justify-content: center; }
+.btn-lg { padding: 12px 24px; font-size: 0.9rem; }
+
+/* ─── DIVIDER ─────────────────────────────────────── */
+.div { height: 1px; background: rgba(255,255,255,0.06); margin: 16px 0; }
+
+/* ─── BADGE ───────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+.b-green { color: #5CB88A; border-color: rgba(46,125,82,0.4); background: var(--green-bg); }
+.b-red { color: #D47878; border-color: rgba(155,53,53,0.4); background: var(--red-bg); }
+.b-amber { color: #D4900A; border-color: rgba(184,90,0,0.4); background: var(--amber-bg); }
+.b-gold { color: var(--gold2); border-color: rgba(184,144,42,0.4); background: rgba(184,144,42,0.1); }
+.b-blue { color: #6EA8D4; border-color: rgba(42,92,138,0.4); background: var(--blue-bg); }
+.b-gray { color: var(--muted); border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+
+/* ─── STATS BAR ───────────────────────────────────── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+@media(max-width:800px){.stats-bar{grid-template-columns:1fr 1fr;}}
+.stat {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.stat::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s;
+}
+.stat.active::before { transform: scaleX(1); }
+.stat-n { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 700; color: var(--sand); }
+.stat-l { font-size: 0.69rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+/* ─── ROOM LIST TABLE ─────────────────────────────── */
+.room-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.room-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.room-table thead {
+  background: rgba(184,144,42,0.08);
+}
+.room-table th {
+  padding: 10px 14px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.room-table td {
+  padding: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+
+.room-row td { padding: 10px 14px; }
+.room-row:hover td { background: rgba(255,255,255,0.015); }
+.room-row.late td { background: rgba(155,53,53,0.05); }
+.room-row.late:hover td { background: rgba(155,53,53,0.09); }
+.room-row.done td { background: rgba(46,125,82,0.04); }
+.room-row.done:hover td { background: rgba(46,125,82,0.08); }
+
+/* section divider row */
+.section-divider-row td {
+  background: rgba(184,144,42,0.06);
+  padding: 8px 14px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.room-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gold2);
+  min-width: 48px;
+  display: inline-block;
+}
+
+.guest-name { font-size: 0.87rem; color: var(--sand); font-weight: 600; }
+.guest-time { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+
+/* Inline note input */
+.inline-note {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px;
+  padding: 6px 10px;
+  color: var(--sand);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  width: 100%;
+  min-width: 140px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.inline-note:focus { border-color: var(--gold); }
+.inline-note::placeholder { color: var(--muted2); font-style: italic; }
+
+.action-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+/* ─── INSPECTOR VIEW ──────────────────────────────── */
+.insp-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.insp-card {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.insp-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.insp-card.done { border-color: rgba(46,125,82,0.35); }
+.insp-card.late { border-color: rgba(155,53,53,0.35); }
+
+.insp-card-top {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.insp-room-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold3);
+}
+.insp-guest { font-size: 0.83rem; color: var(--sand); margin-top: 1px; }
+.insp-time { font-size: 0.72rem; color: var(--muted); }
+
+.insp-card-body { padding: 14px 16px; }
+
+/* Knock button */
+.knock-btn {
+  width: 100%;
+  padding: 10px;
+  background: rgba(184,144,42,0.1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--gold2);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.knock-btn:hover { background: rgba(184,144,42,0.18); transform: scale(1.01); }
+.knock-btn.knocked { background: var(--amber-bg); border-color: rgba(184,90,0,0.4); color: #D4900A; }
+
+/* Checklist mini */
+.mini-checklist { margin: 12px 0; display: flex; flex-direction: column; gap: 6px; }
+.mini-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 11px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mini-check:hover { border-color: rgba(184,144,42,0.25); }
+.mini-check-box {
+  width: 18px; height: 18px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.mini-check.ok .mini-check-box { background: var(--green); border-color: var(--green); }
+.mini-check.issue .mini-check-box { background: var(--red); border-color: var(--red); }
+.mini-check-label { font-size: 0.78rem; color: var(--sand2); }
+
+/* condition select */
+.condition-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.cpill {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.cpill:hover { border-color: rgba(255,255,255,0.2); color: var(--sand); }
+.cpill.sel-good { background: var(--green-bg); border-color: rgba(46,125,82,0.5); color: #5CB88A; }
+.cpill.sel-fair { background: var(--amber-bg); border-color: rgba(184,90,0,0.5); color: #D4900A; }
+.cpill.sel-poor { background: var(--red-bg); border-color: rgba(155,53,53,0.5); color: #D47878; }
+
+/* photo mini */
+.photo-mini-zone {
+  border: 1.5px dashed rgba(184,144,42,0.25);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  margin: 10px 0;
+}
+.photo-mini-zone:hover { border-color: var(--gold); background: rgba(184,144,42,0.04); }
+.photo-mini-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.photo-mini-zone span { font-size: 0.78rem; color: var(--muted); }
+
+.photo-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.photo-tiny { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+
+/* ─── MODAL ───────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.95);
+  transition: transform 0.25s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+
+.modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--ink2);
+  z-index: 1;
+}
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--gold2);
+}
+.modal-close {
+  background: rgba(255,255,255,0.07);
+  border: none;
+  color: var(--muted);
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: rgba(255,255,255,0.12); color: var(--sand); }
+.modal-body { padding: 20px 22px; }
+
+/* ─── TOAST ───────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sand);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 320px;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ─── EMPTY STATE ─────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 2.5rem; opacity: 0.4; margin-bottom: 10px; }
+.empty-text { font-size: 0.85rem; }
+
+/* ─── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:700px) {
+  .topbar { padding: 0 14px; }
+  .main { padding: 16px 14px; }
+  .grid2,.grid3 { grid-template-columns: 1fr; }
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .insp-rooms { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    CheckOut Pro
+  </div>
+  <div class="role-tabs">
+    <button class="rtab active" onclick="switchRole('frontdesk',this)">🛎 Front Desk</button>
+    <button class="rtab" onclick="switchRole('inspector',this)">🔍 Room Inspector</button>
+    <button class="rtab" onclick="switchRole('export',this)">📊 Export</button>
+  </div>
+  <div class="topbar-right">
+    <div class="deadline-chip b-gray" id="deadline-chip">11:00 AM Cutoff</div>
+    <div class="clock" id="clock">--:--</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ═══════════════════════════════════════════════
+       FRONT DESK PANEL
+  ══════════════════════════════════════════════════ -->
+  <div class="panel active" id="panel-frontdesk">
+
+    <!-- Stats -->
+    <div class="stats-bar" id="fd-stats"></div>
+
+    <!-- Add rooms row -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon">➕</div>
+        <div>
+          <div class="card-title">Morning Room Setup</div>
+          <div class="card-sub">Add rooms for today's checkout</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="openBulkModal()">📋 Bulk Add</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearRooms()">🗑 Clear All</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+            <label>Room Number</label>
+            <input type="text" id="add-room" placeholder="e.g. 204" onkeydown="if(event.key==='Enter')addRoom()" />
+          </div>
+
+        <button class="btn btn-gold" onclick="addRoom()">＋ Add Room</button>
+      </div>
+    </div>
+
+    <!-- Room List -->
+    <div class="sec-head">
+      <div>
+        <div class="sec-title">Today's Checkout List</div>
+        <div class="sec-sub" id="fd-date-label"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="sortRooms()">↕ Sort by Room</button>
+      </div>
+    </div>
+
+    <div id="fd-room-list"></div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       INSPECTOR PANEL
+  ══════════════════════════════════════════════════ -->
+  <div class="panel" id="panel-inspector">
+
+    <div class="sec-head">
+      <div>
+        <div class="sec-title">Room Inspection</div>
+        <div class="sec-sub">Knock, inspect, and submit room conditions</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge b-gold" id="insp-pending-badge">— pending</span>
+      </div>
+    </div>
+
+    <div id="insp-rooms-grid"></div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       EXPORT PANEL
+  ══════════════════════════════════════════════════ -->
+  <div class="panel" id="panel-export">
+
+    <div class="sec-head">
+      <div>
+        <div class="sec-title">Export & Reports</div>
+        <div class="sec-sub">Download Excel or send email report</div>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="exp-stats"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon">📊</div>
+          <div>
+            <div class="card-title">Export to Excel</div>
+            <div class="card-sub">Download full checkout report</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Exports all rooms with status, inspection results, conditions, front desk notes, and late checkout flags.
+          </p>
+          <button class="btn btn-gold btn-full" onclick="exportExcel()">📥 Download Excel Report</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon">📧</div>
+          <div>
+            <div class="card-title">Email Report</div>
+            <div class="card-sub">Send summary to manager</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Manager Email</label>
+            <input type="email" id="exp-email" placeholder="manager@hotel.com" />
+          </div>
+          <button class="btn btn-gold btn-full" onclick="emailReport()">📧 Send Email + Export</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Table -->
+    <div class="sec-head" style="margin-top:8px;">
+      <div class="sec-title" style="font-size:1.1rem;">All Records Preview</div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:14px;overflow:auto;">
+      <table class="room-table" id="preview-table">
+        <thead>
+          <tr>
+            <th>Room</th>
+            <th>Status</th>
+            <th>Condition</th>
+            <th>Issues</th>
+            <th>FD Note</th>
+            <th>Inspector Note</th>
+            <th>Late?</th>
+          </tr>
+        </thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══ BULK ADD MODAL ═══════════════════════════════ -->
+<div class="modal-overlay" id="bulk-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Bulk Add Rooms</div>
+      <button class="modal-close" onclick="closeBulkModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+        Paste one room per line. Format:<br>
+        <code style="color:var(--gold2);font-size:0.78rem;">RoomNo</code><br>
+        Example: <code style="color:var(--gold3);">204</code>
+      </p>
+      <div class="field">
+        <label>Room List</label>
+        <textarea id="bulk-input" style="min-height:160px;font-family:monospace;font-size:0.82rem;" placeholder="204&#10;205&#10;301"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-gold btn-full" onclick="bulkAddRooms()">➕ Add All Rooms</button>
+        <button class="btn btn-ghost" onclick="closeBulkModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ INSPECT MODAL ════════════════════════════════ -->
+<div class="modal-overlay" id="inspect-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="insp-modal-title">Inspect Room</div>
+      <button class="modal-close" onclick="closeInspectModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="mini-checklist" id="modal-checklist"></div>
+      <div class="div"></div>
+      <div class="field">
+        <label>Room Condition</label>
+        <div class="condition-pills" id="modal-condition">
+          <div class="cpill" onclick="selCondition(this,'Good')">✅ Good</div>
+          <div class="cpill" onclick="selCondition(this,'Fair')">⚠️ Fair</div>
+          <div class="cpill" onclick="selCondition(this,'Poor')">❌ Poor</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Inspector Notes</label>
+        <textarea id="modal-notes" placeholder="Describe issues, observations..."></textarea>
+      </div>
+      <div class="photo-mini-zone" id="modal-photo-zone">
+        <input type="file" multiple accept="image/*" onchange="handleModalPhotos(this)" />
+        <span>📷 Upload Damage Photos</span>
+      </div>
+      <div class="photo-row" id="modal-photos"></div>
+      <button class="btn btn-gold btn-full btn-lg" onclick="submitInspection()">✅ Submit Inspection</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let rooms = JSON.parse(localStorage.getItem('co_rooms_v2') || '[]');
+let inspectingId = null;
+let modalCheckState = {};
+let modalCondition = '';
+let modalPhotos = [];
+const CUTOFF = '11:00';
+
+const CHECKLIST = [
+  'Key / Keycard Returned',
+  'Minibar Checked',
+  'TV & Remote OK',
+  'Bathroom Clean',
+  'Towels Accounted',
+  'Furniture Undamaged',
+  'Safe Checked',
+  'No Lost & Found Items',
+  'AC / Heating OK',
+  'Windows & Blinds OK',
+];
+
+// ══════════════════════════════════════════════════════
+// CLOCK + DEADLINE
+// ══════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${hh}:${mm}`;
+
+  const chip = document.getElementById('deadline-chip');
+  const totalMin = now.getHours()*60 + now.getMinutes();
+  const cutoffMin = 11*60;
+  if (totalMin < cutoffMin - 30) {
+    chip.className = 'deadline-chip b-green'; chip.textContent = '⏰ Before 11 AM';
+  } else if (totalMin < cutoffMin) {
+    chip.className = 'deadline-chip b-amber deadline-warn'; chip.textContent = '⚠️ Near Cutoff';
+  } else {
+    chip.className = 'deadline-chip b-red'; chip.textContent = '🔴 Past 11 AM';
+  }
+
+  // Auto-update late status every minute
+  checkLateRooms();
+}
+
+function checkLateRooms() {
+  const now = new Date();
+  const currentMin = now.getHours()*60 + now.getMinutes();
+  const cutoffMin = 11*60;
+  let changed = false;
+  rooms.forEach(r => {
+    if (r.status === 'pending') {
+      const [h,m] = r.checkoutTime.split(':').map(Number);
+      const roomMin = h*60 + m;
+      const shouldBeLate = roomMin <= cutoffMin && currentMin > cutoffMin;
+      if (shouldBeLate && !r.isLate) { r.isLate = true; changed = true; }
+    }
+  });
+  if (changed) { saveRooms(); renderAll(); }
+}
+
+// ══════════════════════════════════════════════════════
+// ROLE SWITCH
+// ══════════════════════════════════════════════════════
+function switchRole(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════
+// ADD ROOM
+// ══════════════════════════════════════════════════════
+function addRoom() {
+  const num = document.getElementById('add-room').value.trim();
+  if (!num) { toast('⚠️ Enter a room number', '#9B3535'); return; }
+
+  if (rooms.find(r => r.num === num)) { toast(`Room ${num} already added`, '#B85A00'); return; }
+
+  const [h,m] = time.split(':').map(Number);
+  const roomMin = h*60+m;
+  const cutoffMin = 11*60;
+  const now = new Date();
+  const currentMin = now.getHours()*60+now.getMinutes();
+
+  rooms.push({
+    id: Date.now() + Math.random(),
+    num, guest: '', checkoutTime: '', type: '', floor: '',
+    status: 'pending',
+    isLate: roomMin <= cutoffMin && currentMin > cutoffMin,
+    fdNote: '',
+    knocked: false,
+    knockTime: null,
+    condition: '',
+    checklist: {},
+    inspectorNotes: '',
+    photosCount: 0,
+    addedAt: new Date().toISOString(),
+    completedAt: null,
+  });
+
+  saveRooms();
+  renderAll();
+  document.getElementById('add-room').value = '';
+  document.getElementById('add-room').focus();
+  toast(`✅ Room ${num} added`);
+}
+
+// ══════════════════════════════════════════════════════
+// BULK ADD
+// ══════════════════════════════════════════════════════
+function openBulkModal() { document.getElementById('bulk-modal').classList.add('open'); }
+function closeBulkModal() { document.getElementById('bulk-modal').classList.remove('open'); }
+
+function bulkAddRooms() {
+  const lines = document.getElementById('bulk-input').value.split('\n').filter(l => l.trim());
+  let added = 0, skipped = 0;
+  lines.forEach(line => {
+    const parts = line.split(',').map(s => s.trim());
+    const num = parts[0];
+    if (!num) return;
+    if (rooms.find(r => r.num === num)) { skipped++; return; }
+    const guest = '';
+    const time = '';
+    const type = parts[3] || '';
+    const floor = parts[4] || '';
+    const [h,m] = time.split(':').map(Number);
+    const roomMin = h*60+m; const cutoffMin = 11*60;
+    const now = new Date(); const currentMin = now.getHours()*60+now.getMinutes();
+    rooms.push({
+      id: Date.now() + Math.random(),
+      num, guest: '', checkoutTime: '', type: '', floor: '',
+      status: 'pending', isLate: roomMin <= cutoffMin && currentMin > cutoffMin,
+      fdNote: '', knocked: false, knockTime: null,
+      condition: '', checklist: {}, inspectorNotes: '',
+      photosCount: 0, addedAt: new Date().toISOString(), completedAt: null,
+    });
+    added++;
+  });
+  saveRooms(); renderAll(); closeBulkModal();
+  document.getElementById('bulk-input').value = '';
+  toast(`✅ Added ${added} rooms${skipped ? `, ${skipped} skipped (duplicates)` : ''}`);
+}
+
+// ══════════════════════════════════════════════════════
+// MARK CHECKED OUT (front desk confirms guest left)
+// ══════════════════════════════════════════════════════
+function markCheckedOut(id) {
+  const r = rooms.find(r => r.id === id);
+  if (!r) return;
+  r.status = 'checked-out';
+  r.completedAt = new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+  r.isLate = false;
+  saveRooms(); renderAll();
+  toast(`✅ Room ${r.num} marked as checked out`);
+}
+
+function removeRoom(id) {
+  if (!confirm('Remove this room?')) return;
+  rooms = rooms.filter(r => r.id !== id);
+  saveRooms(); renderAll();
+}
+
+function saveFdNote(id, val) {
+  const r = rooms.find(r => r.id === id);
+  if (r) { r.fdNote = val; saveRooms(); }
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER FRONT DESK
+// ══════════════════════════════════════════════════════
+function renderFrontDesk() {
+  // Stats
+  const total = rooms.length;
+  const done = rooms.filter(r => r.status === 'checked-out').length;
+  const late = rooms.filter(r => r.isLate && r.status === 'pending').length;
+  const inspected = rooms.filter(r => r.condition).length;
+  const pending = rooms.filter(r => r.status === 'pending').length;
+  document.getElementById('fd-stats').innerHTML = `
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total Rooms</div></div>
+    <div class="stat"><div class="stat-n">${pending}</div><div class="stat-l">Pending</div></div>
+    <div class="stat"><div class="stat-n">${done}</div><div class="stat-l">Checked Out</div></div>
+    <div class="stat"><div class="stat-n">${late}</div><div class="stat-l">Late Checkout</div></div>
+    <div class="stat"><div class="stat-n">${inspected}</div><div class="stat-l">Inspected</div></div>
+  `;
+
+  // Date label
+  const now = new Date();
+  document.getElementById('fd-date-label').textContent =
+    now.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+  // Split rooms
+  const normal = rooms.filter(r => !r.isLate || r.status === 'checked-out');
+  const lateRooms = rooms.filter(r => r.isLate && r.status === 'pending');
+
+  if (!rooms.length) {
+    document.getElementById('fd-room-list').innerHTML = `
+      <div class="empty"><div class="empty-icon">🏨</div><div class="empty-text">No rooms added yet. Add rooms above to start your morning checkout.</div></div>`;
+    return;
+  }
+
+  let html = `<div class="room-table-wrap"><table class="room-table">
+    <thead><tr>
+      <th>Room</th><th>Status</th><th>Condition</th>
+      <th>FD Note / Review</th><th>Actions</th>
+    </tr></thead><tbody>`;
+
+  if (normal.length) {
+    html += `<tr class="section-divider-row"><td colspan="6">⏰ Regular Checkout (Before 11 AM)</td></tr>`;
+    normal.forEach(r => { html += roomRow(r); });
+  }
+
+  if (lateRooms.length) {
+    html += `<tr class="section-divider-row"><td colspan="6">🔴 Late Checkout — After 11 AM</td></tr>`;
+    lateRooms.forEach(r => { html += roomRow(r); });
+  }
+
+  html += `</tbody></table></div>`;
+  document.getElementById('fd-room-list').innerHTML = html;
+}
+
+function roomRow(r) {
+  const statusBadge = r.status === 'checked-out'
+    ? `<span class="badge b-green">✓ Out</span>`
+    : r.isLate
+    ? `<span class="badge b-red">🔴 Late</span>`
+    : `<span class="badge b-gold">⏳ Pending</span>`;
+
+  const condBadge = r.condition
+    ? `<span class="badge ${r.condition==='Good'?'b-green':r.condition==='Fair'?'b-amber':'b-red'}">${r.condition}</span>`
+    : `<span class="badge b-gray">—</span>`;
+
+  const rowClass = r.status === 'checked-out' ? 'done' : r.isLate ? 'late' : '';
+
+  return `<tr class="room-row ${rowClass}">
+    <td><span class="room-num">${r.num}</span></td>
+    <td>${statusBadge}</td>
+    <td>${condBadge}${r.knocked ? `<br><span style="font-size:0.68rem;color:var(--muted);margin-top:2px;display:block;">Knocked ${r.knockTime||''}</span>` : ''}</td>
+    <td>
+      <input class="inline-note" value="${escHtml(r.fdNote)}" placeholder="Add note or review…"
+        onchange="saveFdNote(${r.id}, this.value)"
+        onblur="saveFdNote(${r.id}, this.value)" />
+    </td>
+    <td>
+      <div class="action-btns">
+        ${r.status !== 'checked-out' ? `<button class="btn btn-green btn-sm" onclick="markCheckedOut(${r.id})">✓ Out</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="removeRoom(${r.id})">✕</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER INSPECTOR
+// ══════════════════════════════════════════════════════
+function renderInspector() {
+  const pending = rooms.filter(r => r.status !== 'checked-out' || !r.condition);
+  const all = [...rooms].sort((a,b) => {
+    const order = {pending:0, 'checked-out':1};
+    return (order[a.status]||0) - (order[b.status]||0);
+  });
+
+  document.getElementById('insp-pending-badge').textContent =
+    `${rooms.filter(r => !r.condition && r.status !== 'checked-out').length} pending inspection`;
+
+  if (!rooms.length) {
+    document.getElementById('insp-rooms-grid').innerHTML =
+      `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No rooms to inspect yet. Rooms are added by Front Desk.</div></div>`;
+    return;
+  }
+
+  const html = all.map(r => {
+    const isLate = r.isLate && r.status === 'pending';
+    const isDone = !!r.condition;
+    return `
+    <div class="insp-card ${isDone?'done':isLate?'late':''}">
+      <div class="insp-card-top">
+        <div>
+          <div class="insp-room-num">Rm ${r.num}</div>
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+          ${r.status === 'checked-out' ? '<span class="badge b-green">✓ Checked Out</span>' : isLate ? '<span class="badge b-red">Late</span>' : '<span class="badge b-gold">Pending</span>'}
+          ${isDone ? `<span class="badge ${r.condition==='Good'?'b-green':r.condition==='Fair'?'b-amber':'b-red'}">${r.condition}</span>` : ''}
+          ${r.fdNote ? `<span class="badge b-blue" title="${escHtml(r.fdNote)}">📝 FD Note</span>` : ''}
+        </div>
+      </div>
+      <div class="insp-card-body">
+        ${r.fdNote ? `<div style="font-size:0.77rem;color:#6EA8D4;background:var(--blue-bg);border:1px solid rgba(42,92,138,0.3);border-radius:7px;padding:7px 10px;margin-bottom:10px;">💬 FD: ${escHtml(r.fdNote)}</div>` : ''}
+        ${!isDone ? `
+          <button class="knock-btn ${r.knocked?'knocked':''}" onclick="knockRoom(${r.id})">
+            ${r.knocked ? `🚪 Knocked at ${r.knockTime}` : '🤛 Knock'}
+          </button>
+          <div style="margin-top:10px;">
+            <button class="btn btn-gold btn-full" onclick="openInspectModal(${r.id})">🔍 Inspect Room</button>
+          </div>
+        ` : `
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">
+            ${r.inspectorNotes || 'No notes'}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${r.photosCount ? `<span class="badge b-gray">📸 ${r.photosCount} photos</span>` : ''}
+            ${Object.values(r.checklist).filter(v=>v==='issue').length ? `<span class="badge b-red">⚠️ ${Object.values(r.checklist).filter(v=>v==='issue').length} issues</span>` : '<span class="badge b-green">✓ No issues</span>'}
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-sm btn-full" onclick="openInspectModal(${r.id})">✏️ Re-Inspect</button>
+          </div>
+        `}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('insp-rooms-grid').innerHTML = `<div class="insp-rooms">${html}</div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// KNOCK
+// ══════════════════════════════════════════════════════
+function knockRoom(id) {
+  const r = rooms.find(r => r.id === id);
+  if (!r) return;
+  r.knocked = true;
+  r.knockTime = new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+  saveRooms(); renderAll();
+  toast(`🤛 Knocked on Room ${r.num}`);
+}
+
+// ══════════════════════════════════════════════════════
+// INSPECT MODAL
+// ══════════════════════════════════════════════════════
+function openInspectModal(id) {
+  inspectingId = id;
+  const r = rooms.find(r => r.id === id);
+  document.getElementById('insp-modal-title').textContent = `Inspect Room ${r.num}`;
+
+  // Build checklist
+  modalCheckState = {};
+  CHECKLIST.forEach(item => { modalCheckState[item] = r.checklist[item] || null; });
+
+  document.getElementById('modal-checklist').innerHTML = CHECKLIST.map(item => {
+    const state = modalCheckState[item];
+    return `<div class="mini-check ${state==='ok'?'ok':state==='issue'?'issue':''}" onclick="toggleMiniCheck(this,'${escHtml(item)}')">
+      <div class="mini-check-box">${state==='ok'?'✓':state==='issue'?'✗':''}</div>
+      <div class="mini-check-label">${item}</div>
+      <span style="margin-left:auto;font-size:0.68rem;color:${state==='ok'?'#5CB88A':state==='issue'?'#D47878':'var(--muted2)'};">
+        ${state==='ok'?'OK':state==='issue'?'ISSUE':'—'}
+      </span>
+    </div>`;
+  }).join('');
+
+  // Condition
+  modalCondition = r.condition || '';
+  document.querySelectorAll('#modal-condition .cpill').forEach(p => {
+    p.className = 'cpill';
+    const c = p.textContent.replace(/[^a-zA-Z]/g,'').trim();
+    if (c === modalCondition) {
+      p.classList.add(`sel-${modalCondition.toLowerCase()}`);
+    }
+  });
+
+  document.getElementById('modal-notes').value = r.inspectorNotes || '';
+  document.getElementById('modal-photos').innerHTML = '';
+  modalPhotos = [];
+
+  document.getElementById('inspect-modal').classList.add('open');
+}
+
+function closeInspectModal() {
+  document.getElementById('inspect-modal').classList.remove('open');
+  inspectingId = null;
+}
+
+function toggleMiniCheck(el, item) {
+  const cur = modalCheckState[item];
+  let next = cur === null ? 'ok' : cur === 'ok' ? 'issue' : null;
+  modalCheckState[item] = next;
+  el.className = `mini-check ${next==='ok'?'ok':next==='issue'?'issue':''}`;
+  el.querySelector('.mini-check-box').textContent = next==='ok'?'✓':next==='issue'?'✗':'';
+  el.querySelector('span').textContent = next==='ok'?'OK':next==='issue'?'ISSUE':'—';
+  el.querySelector('span').style.color = next==='ok'?'#5CB88A':next==='issue'?'#D47878':'var(--muted2)';
+}
+
+function selCondition(el, val) {
+  modalCondition = val;
+  document.querySelectorAll('#modal-condition .cpill').forEach(p => {
+    p.className = 'cpill';
+  });
+  el.classList.add(`sel-${val.toLowerCase()}`);
+}
+
+function handleModalPhotos(input) {
+  Array.from(input.files).forEach(file => {
+    if (modalPhotos.length >= 10) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      modalPhotos.push(e.target.result);
+      const img = document.createElement('img');
+      img.className = 'photo-tiny';
+      img.src = e.target.result;
+      document.getElementById('modal-photos').appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function submitInspection() {
+  if (!inspectingId) return;
+  const r = rooms.find(r => r.id === inspectingId);
+  r.checklist = {...modalCheckState};
+  r.condition = modalCondition || 'Good';
+  r.inspectorNotes = document.getElementById('modal-notes').value;
+  r.photosCount = modalPhotos.length;
+  r.inspectedAt = new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+  saveRooms(); renderAll(); closeInspectModal();
+  toast(`✅ Room ${r.num} inspection submitted`);
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER EXPORT
+// ══════════════════════════════════════════════════════
+function renderExport() {
+  const total = rooms.length;
+  const done = rooms.filter(r=>r.status==='checked-out').length;
+  const late = rooms.filter(r=>r.isLate&&r.status==='pending').length;
+  const inspected = rooms.filter(r=>r.condition).length;
+  const issues = rooms.reduce((acc,r) => acc + Object.values(r.checklist||{}).filter(v=>v==='issue').length, 0);
+
+  document.getElementById('exp-stats').innerHTML = `
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total Rooms</div></div>
+    <div class="stat"><div class="stat-n">${done}</div><div class="stat-l">Checked Out</div></div>
+    <div class="stat"><div class="stat-n">${late}</div><div class="stat-l">Late</div></div>
+    <div class="stat"><div class="stat-n">${inspected}</div><div class="stat-l">Inspected</div></div>
+    <div class="stat"><div class="stat-n">${issues}</div><div class="stat-l">Issues Found</div></div>
+  `;
+
+  const body = document.getElementById('preview-body');
+  if (!rooms.length) {
+    body.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No records</div></div></td></tr>`;
+    return;
+  }
+  body.innerHTML = rooms.map(r => `
+    <tr>
+      <td><strong style="color:var(--gold2);">${r.num}</strong></td>
+      <td>${r.status==='checked-out'?'<span class="badge b-green">Out</span>':'<span class="badge b-gold">Pending</span>'}</td>
+      <td>${r.condition?`<span class="badge ${r.condition==='Good'?'b-green':r.condition==='Fair'?'b-amber':'b-red'}">${r.condition}</span>`:'—'}</td>
+      <td>${Object.values(r.checklist||{}).filter(v=>v==='issue').length||'—'}</td>
+      <td style="font-size:0.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.fdNote||'—'}</td>
+      <td style="font-size:0.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.inspectorNotes||'—'}</td>
+      <td>${r.isLate?'<span class="badge b-red">Late</span>':'<span class="badge b-green">On time</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ══════════════════════════════════════════════════════
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    toast('⚠️ Excel library not loaded. Check your internet connection.', '#9B3535');
+    return;
+  }
+  if (!rooms.length) { toast('No rooms to export', '#9B3535'); return; }
+  const wb = XLSX.utils.book_new();
+
+  const data = rooms.map((r,i) => {
+    const issueList = Object.entries(r.checklist||{}).filter(([k,v])=>v==='issue').map(([k])=>k).join(', ') || 'None';
+    return {
+      '#': i+1,
+      'Room': r.num,
+      'Status': r.status === 'checked-out' ? 'Checked Out' : 'Pending',
+      'Late Checkout': r.isLate ? 'YES' : 'No',
+      'Knocked': r.knocked ? `Yes (${r.knockTime})` : 'No',
+      'Condition': r.condition || '',
+      'Checklist Issues': issueList,
+      'Front Desk Note': r.fdNote,
+      'Inspector Notes': r.inspectorNotes,
+      'Photos Taken': r.photosCount || 0,
+      'Checked Out At': r.completedAt || '',
+      'Inspected At': r.inspectedAt || '',
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = Object.keys(data[0]).map(k => ({ wch: Math.max(k.length+2, 14) }));
+
+  // Color header row
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({r:0, c})];
+    if (cell) {
+      cell.s = { font: { bold: true, color: { rgb: 'B8902A' } }, fill: { fgColor: { rgb: '1C1914' } } };
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Checkout Records');
+
+  // Summary sheet
+  const total = rooms.length;
+  const done = rooms.filter(r=>r.status==='checked-out').length;
+  const late = rooms.filter(r=>r.isLate).length;
+  const issues = rooms.reduce((acc,r)=>acc+Object.values(r.checklist||{}).filter(v=>v==='issue').length,0);
+  const good = rooms.filter(r=>r.condition==='Good').length;
+  const poor = rooms.filter(r=>r.condition==='Poor').length;
+
+  const sum = XLSX.utils.aoa_to_sheet([
+    ['CHECKOUT SUMMARY REPORT'],
+    ['Generated', new Date().toLocaleString()],
+    [''],
+    ['Metric', 'Value'],
+    ['Total Rooms', total],
+    ['Checked Out', done],
+    ['Still Pending', total-done],
+    ['Late Checkouts', late],
+    ['Total Issues Found', issues],
+    ['Good Condition', good],
+    ['Poor Condition', poor],
+  ]);
+  sum['!cols'] = [{wch:26},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, sum, 'Summary');
+
+  const filename = `Checkout_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  toast('📊 Excel downloaded!');
+}
+
+function emailReport() {
+  const email = document.getElementById('exp-email').value.trim();
+  if (!email) { toast('Enter an email address', '#9B3535'); return; }
+  exportExcel();
+  const done = rooms.filter(r=>r.status==='checked-out').length;
+  const late = rooms.filter(r=>r.isLate&&r.status==='pending').length;
+  const issues = rooms.reduce((acc,r)=>acc+Object.values(r.checklist||{}).filter(v=>v==='issue').length,0);
+  const subj = encodeURIComponent(`Hotel Checkout Report – ${new Date().toLocaleDateString()}`);
+  const body = encodeURIComponent(
+`DAILY CHECKOUT REPORT
+=====================
+Date: ${new Date().toLocaleDateString()}
+Total Rooms: ${rooms.length}
+Checked Out: ${done}
+Pending: ${rooms.length-done}
+Late Checkouts: ${late}
+Total Issues Found: ${issues}
+
+Excel file has been downloaded to your device.
+Please attach it to this email before sending.
+
+— CheckOut Pro`
+  );
+  window.location.href = `mailto:${email}?subject=${subj}&body=${body}`;
+  toast('📧 Email client opened!');
+}
+
+// ══════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════
+function saveRooms() {
+  try { localStorage.setItem('co_rooms_v2', JSON.stringify(rooms)); } catch(e){}
+}
+function clearRooms() {
+  if (!confirm('Remove all rooms from today\'s list?')) return;
+  rooms = []; saveRooms(); renderAll(); toast('🗑 Rooms cleared');
+}
+function sortRooms() {
+  rooms.sort((a,b) => a.num.localeCompare(b.num, undefined, {numeric:true}));
+  saveRooms(); renderAll(); toast('↕ Sorted by room number');
+}
+function renderAll() { renderFrontDesk(); renderInspector(); renderExport(); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg, bg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.style.background = bg || 'var(--ink3)';
+  t.style.borderColor = bg ? 'rgba(255,255,255,0.1)' : 'rgba(184,144,42,0.3)';
+  t.classList.add('show');
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modal on overlay click
+document.getElementById('bulk-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('bulk-modal')) closeBulkModal();
+});
+document.getElementById('inspect-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('inspect-modal')) closeInspectModal();
+});
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function init() {
+  renderAll();
+  updateClock();
+  setInterval(updateClock, 30000);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
